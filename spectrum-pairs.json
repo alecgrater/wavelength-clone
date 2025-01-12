@@ -1,0 +1,177 @@
+{
+  "categories": {
+      "Emotional States": [
+          ["Happy", "Sad"],
+          ["Brave", "Cowardly"],
+          ["Optimistic", "Pessimistic"],
+          ["Extroverted", "Introverted"],
+          ["Patient", "Impatient"],
+          ["Serious", "Playful"],
+          ["Friendly", "Hostile"],
+          ["Relaxed", "Tense"],
+          ["Energetic", "Lethargic"]
+      ],
+      "Physical Properties": [
+          ["Hot", "Cold"],
+          ["Light", "Heavy"],
+          ["Fresh", "Stale"],
+          ["Rough", "Smooth"],
+          ["Dense", "Sparse"],
+          ["Wet", "Dry"],
+          ["Sharp", "Dull"],
+          ["Tender", "Tough"],
+          ["Fragile", "Sturdy"]
+      ],
+      "Aesthetics & Appearance": [
+          ["Beautiful", "Ugly"],
+          ["Graceful", "Clumsy"],
+          ["Modern", "Ancient"],
+          ["Clean", "Dirty"],
+          ["Minimalist", "Maximalist"],
+          ["Symmetrical", "Asymmetrical"]
+      ],
+      "Cultural & Social": [
+          ["Public", "Private"],
+          ["Urban", "Rural"],
+          ["Traditional", "Progressive"],
+          ["Formal", "Casual"],
+          ["Mainstream", "Alternative"],
+          ["Local", "Global"],
+          ["Elite", "Common"],
+          ["Inclusive", "Exclusive"]
+      ],
+      "Personality & Traits": [
+          ["Generous", "Selfish"],
+          ["Humble", "Proud"],
+          ["Logical", "Emotional"],
+          ["Creative", "Analytical"],
+          ["Curious", "Indifferent"],
+          ["Modest", "Extravagant"],
+          ["Wise", "Foolish"],
+          ["Mature", "Childish"]
+      ],
+      "Preferences & Sensory": [
+          ["Spicy", "Mild"],
+          ["Sweet", "Sour"],
+          ["Loud", "Quiet"],
+          ["Comfortable", "Uncomfortable"],
+          ["Beautiful", "Ugly"]
+      ],
+      "Ethics & Morality": [
+          ["Good", "Evil"],
+          ["Ethical", "Unethical"],
+          ["Peaceful", "Violent"]
+      ],
+      "Complexity & Order": [
+          ["Simple", "Complex"],
+          ["Organized", "Chaotic"],
+          ["Systematic", "Random"],
+          ["Precise", "Vague"],
+          ["Subtle", "Obvious"]
+      ],
+      "Functionality & Usability": [
+          ["Efficient", "Inefficient"],
+          ["Accurate", "Inaccurate"],
+          ["Practical", "Theoretical"],
+          ["Flexible", "Rigid"],
+          ["Helpful", "Unhelpful"]
+      ],
+      "Temporal States": [
+          ["Temporary", "Permanent"],
+          ["Temporary", "Eternal"],
+          ["Modern", "Ancient"],
+          ["Young", "Old"]
+      ],
+      "Magnitude & Extent": [
+          ["Tiny", "Huge"],
+          ["Whole", "Partial"],
+          ["Dense", "Sparse"],
+          ["Abundant", "Scarce"],
+          ["Trivial", "Important"]
+      ],
+      "Environment & Nature": [
+          ["Natural", "Artificial"],
+          ["Urban", "Rural"],
+          ["Fresh", "Stale"],
+          ["Local", "Global"],
+          ["Wet", "Dry"]
+      ],
+      "Behavior & Actions": [
+          ["Spontaneous", "Planned"],
+          ["Active", "Passive"],
+          ["Conventional", "Unconventional"],
+          ["Open", "Closed"],
+          ["Direct", "Indirect"]
+      ],
+      "Relationships & Interaction": [
+          ["Inclusive", "Exclusive"],
+          ["Leader", "Follower"],
+          ["Open", "Closed"],
+          ["Friendly", "Hostile"],
+          ["Collaborative", "Competitive"]
+      ],
+      "Movement & Speed": [
+          ["Fast", "Slow"],
+          ["Mobile", "Stationary"],
+          ["Active", "Passive"],
+          ["Energetic", "Lethargic"],
+          ["Dramatic", "Subtle"]
+      ],
+      "Material & Construction": [
+          ["Flexible", "Rigid"],
+          ["Dense", "Sparse"],
+          ["Rough", "Smooth"],
+          ["Fragile", "Sturdy"],
+          ["Tender", "Tough"]
+      ],
+      "Conceptual Thinking": [
+          ["Abstract", "Concrete"],
+          ["Logical", "Emotional"],
+          ["Practical", "Theoretical"],
+          ["Focused", "Distracted"],
+          ["Sharp", "Dull"]
+      ],
+      "Mood & Tone": [
+          ["Positive", "Negative"],
+          ["Dramatic", "Subtle"],
+          ["Relaxed", "Tense"],
+          ["Happy", "Sad"],
+          ["Energetic", "Lethargic"]
+      ],
+      "Cognitive States": [
+          ["Focused", "Distracted"],
+          ["Precise", "Vague"],
+          ["Sharp", "Dull"],
+          ["Logical", "Emotional"],
+          ["Curious", "Indifferent"]
+      ],
+      "Power & Influence": [
+          ["Strong", "Weak"],
+          ["Leader", "Follower"],
+          ["Superior", "Inferior"],
+          ["Elite", "Common"],
+          ["Dominant", "Submissive"]
+      ],
+      "Popularity & Adoption": [
+          ["Mainstream", "Alternative"],
+          ["Popular", "Unpopular"],
+          ["Trendy", "Outdated"],
+          ["Familiar", "Foreign"],
+          ["Local", "Global"]
+      ],
+      "Durability & Longevity": [
+          ["Temporary", "Permanent"],
+          ["Fragile", "Sturdy"],
+          ["Durable", "Breakable"],
+          ["Temporary", "Eternal"],
+          ["Short-lived", "Long-lasting"]
+      ],
+      "Intensity & Extremes": [
+          ["Intense", "Mild"],
+          ["Abundant", "Scarce"],
+          ["Boring", "Exciting"],
+          ["Dramatic", "Subtle"],
+          ["Extreme", "Moderate"]
+      ]
+  }
+}
