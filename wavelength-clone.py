@@ -1,4 +1,3 @@
-# wavelength_game.py
 import pygame
 import sys
 import random
@@ -6,16 +5,13 @@ import json
 import math
 from typing import List, Tuple, Dict
 
-# Initialize Pygame
 pygame.init()
 pygame.font.init()
 
-# Constants
 WINDOW_WIDTH = 800
 WINDOW_HEIGHT = 600
 FPS = 60
 
-# Colors
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 GRAY = (128, 128, 128)
@@ -27,24 +23,21 @@ GOLD = (255, 215, 0)
 SILVER = (192, 192, 192)
 BRONZE = (205, 127, 50)
 
-# Scoring zones colors (from best to worst)
 ZONE_COLORS = [
-    (46, 204, 113),  # Perfect (Green)
-    (52, 152, 219),  # Good (Blue)
-    (241, 196, 15),  # Okay (Yellow)
-    (231, 76, 60)    # Miss (Red)
+    (46, 204, 113),
+    (52, 152, 219),
+    (241, 196, 15),
+    (231, 76, 60)
 ]
 
-# Animation constants
-REVEAL_ANIMATION_DURATION = 60  # frames
-SCORE_POPUP_DURATION = 90  # frames
+REVEAL_ANIMATION_DURATION = 60
+SCORE_POPUP_DURATION = 90
 
-# Fonts
 FONT_LARGE = pygame.font.Font(None, 48)
 FONT_MEDIUM = pygame.font.Font(None, 36)
 FONT_SMALL = pygame.font.Font(None, 24)
 
-# Game states
+CATEGORY_SELECT = "category_select"
 PSYCHIC_TURN = "psychic_turn"
 GUESS_TURN = "guess_turn"
 REVEAL = "reveal"
@@ -71,15 +64,52 @@ class Button:
             return self.rect.collidepoint(event.pos)
         return False
 
+class CategoryButton(Button):
+    def __init__(self, x: int, y: int, width: int, height: int, text: str, category: str):
+        super().__init__(x, y, width, height, text, DARK_BLUE)
+        self.category = category
+
 class Slider:
     def __init__(self, x: int, y: int, width: int, height: int):
         self.rect = pygame.Rect(x, y, width, height)
-        self.handle_rect = pygame.Rect(x, y - 10, 20, height + 20)
-        self.value = 0.5
+        self.handle_rect = pygame.Rect(x + width//2 - 10, y - 10, 20, height + 20)  # Start in center
+        self.value = 0.5  # Start in center
         self.dragging = False
+        
+        # Center marker properties
+        self.center_width = 2
+        self.center_height = 30
+        self.center_color = WHITE
 
-    def draw(self, screen: pygame.Surface, color: Tuple[int, int, int] = GRAY):
+    def draw(self, screen: pygame.Surface, color: Tuple[int, int, int] = GRAY, show_center: bool = False):
+        # Draw the main slider bar
         pygame.draw.rect(screen, color, self.rect)
+        
+        # Draw center marker if requested
+        if show_center:
+            center_x = self.rect.x + self.rect.width // 2
+            center_rect = pygame.Rect(
+                center_x - self.center_width//2,
+                self.rect.y - self.center_height//2,
+                self.center_width,
+                self.center_height
+            )
+            pygame.draw.rect(screen, self.center_color, center_rect)
+            
+            # Draw small tick marks around center
+            tick_length = 5
+            tick_spacing = 10
+            for i in range(1, 4):
+                # Left ticks
+                pygame.draw.line(screen, self.center_color,
+                               (center_x - i * tick_spacing, self.rect.y - tick_length),
+                               (center_x - i * tick_spacing, self.rect.y + tick_length))
+                # Right ticks
+                pygame.draw.line(screen, self.center_color,
+                               (center_x + i * tick_spacing, self.rect.y - tick_length),
+                               (center_x + i * tick_spacing, self.rect.y + tick_length))
+
+        # Draw the handle
         pygame.draw.rect(screen, DARK_BLUE, self.handle_rect, border_radius=5)
 
     def handle_event(self, event: pygame.event.Event) -> bool:
@@ -99,6 +129,9 @@ class Slider:
     def set_value(self, value: float):
         self.value = max(0, min(1, value))
         self.handle_rect.centerx = self.rect.x + (self.value * self.rect.width)
+        
+    def reset_to_center(self):
+        self.set_value(0.5)
 
 class TextInput:
     def __init__(self, x: int, y: int, width: int, height: int):
@@ -114,7 +147,7 @@ class TextInput:
                 return True
             elif event.key == pygame.K_BACKSPACE:
                 self.text = self.text[:-1]
-            elif len(self.text) < 30:  # Limit text length
+            elif len(self.text) < 30:
                 self.text += event.unicode
         return False
 
@@ -131,7 +164,6 @@ class ScorePopup:
         self.alpha = 255
         self.frame = 0
         
-        # Determine color based on score
         if score == 5:
             self.color = GOLD
         elif score == 3:
@@ -145,7 +177,7 @@ class ScorePopup:
         self.frame += 1
         if self.frame > SCORE_POPUP_DURATION // 2:
             self.alpha = max(0, 255 * (1 - (self.frame - SCORE_POPUP_DURATION // 2) / (SCORE_POPUP_DURATION // 2)))
-        self.y -= 1  # Float upward
+        self.y -= 1
     
     def draw(self, screen: pygame.Surface):
         score_text = FONT_LARGE.render(f"+{self.score}", True, self.color)
@@ -161,48 +193,86 @@ class WavelengthGame:
         pygame.display.set_caption("Wavelength")
         self.clock = pygame.time.Clock()
 
-        # Game state
         self.player_count = player_count
         self.current_player = 0
         self.scores = [0] * player_count
-        self.game_state = PSYCHIC_TURN
+        self.game_state = CATEGORY_SELECT
         self.current_round = 0
         self.max_rounds = player_count
 
-        # UI elements
         self.slider = Slider(100, 300, WINDOW_WIDTH - 200, 20)
         self.clue_input = TextInput(WINDOW_WIDTH // 4, 200, WINDOW_WIDTH // 2, 40)
-        self.confirm_button = Button(WINDOW_WIDTH // 2 - 50, 400, 100, 40, "Confirm", DARK_BLUE)
+        
+        new_spectrum_width = 150
+        confirm_width = 100
+        total_width = new_spectrum_width + confirm_width + 20
+        start_x = WINDOW_WIDTH // 2 - total_width // 2
+        
+        self.new_spectrum_button = Button(start_x, 400, new_spectrum_width, 40, "New Spectrum", DARK_BLUE)
+        self.confirm_button = Button(start_x + new_spectrum_width + 20, 400, confirm_width, 40, "Confirm", DARK_BLUE)
 
-        # Animation state
         self.reveal_progress = 0
         self.score_popup = None
         self.showing_distance = False
 
-        # Load spectrum pairs from JSON
-        try:
-            with open('spectrum-pairs.json', 'r') as f:
-                data = json.load(f)
-                self.spectrum_pairs = data['spectrum_pairs']
-        except FileNotFoundError:
-            print("Error: spectrum_pairs.json not found. Using default pairs.")
-            self.spectrum_pairs = [
-                ["Spicy", "Mild"],
-                ["Hot", "Cold"],
-                ["Easy", "Hard"]
-            ]
-        except json.JSONDecodeError:
-            print("Error: Invalid JSON format in spectrum_pairs.json. Using default pairs.")
-            self.spectrum_pairs = [
-                ["Spicy", "Mild"],
-                ["Hot", "Cold"],
-                ["Easy", "Hard"]
-            ]
+        # Load categories and create category buttons
+        with open('spectrum-pairs.json', 'r') as f:
+            data = json.load(f)
+            self.categories = data['categories']
+            
+        # Add "All" category
+        all_pairs = []
+        for pairs in self.categories.values():
+            all_pairs.extend(pairs)
+        self.categories["All"] = all_pairs
+            
+        self.category_buttons = []
+        button_width = 180  # Slightly smaller to fit more horizontally
+        button_height = 40
+        button_spacing_x = 20
+        button_spacing_y = 20
+        
+        # Calculate layout
+        buttons_per_row = 4
+        num_categories = len(self.categories)
+        num_rows = (num_categories + buttons_per_row - 1) // buttons_per_row  # Ceiling division
+        
+        total_width = (button_width * buttons_per_row) + (button_spacing_x * (buttons_per_row - 1))
+        total_height = (button_height * num_rows) + (button_spacing_y * (num_rows - 1))
+        
+        start_x = (WINDOW_WIDTH - total_width) // 2
+        start_y = (WINDOW_HEIGHT - total_height) // 2
+        
+        # Create buttons in grid layout
+        for i, category in enumerate(self.categories.keys()):
+            row = i // buttons_per_row
+            col = i % buttons_per_row
+            
+            x = start_x + col * (button_width + button_spacing_x)
+            y = start_y + row * (button_height + button_spacing_y)
+            
+            self.category_buttons.append(CategoryButton(x, y, button_width, button_height, category, category))
 
-        self.current_spectrum = random.choice(self.spectrum_pairs)
+        self.selected_category = None
+        self.spectrum_pairs = []
+        self.current_spectrum = None
         self.current_clue = ""
         self.target_value = 0.5
         self.guess_value = 0.5
+
+    def select_category(self, category: str):
+        self.selected_category = category
+        self.spectrum_pairs = self.categories[category]
+        self.current_spectrum = random.choice(self.spectrum_pairs)
+        self.game_state = PSYCHIC_TURN
+        self.slider.reset_to_center()
+
+    def get_new_spectrum(self):
+        available_pairs = [pair for pair in self.spectrum_pairs if pair != self.current_spectrum]
+        if available_pairs:
+            self.current_spectrum = random.choice(available_pairs)
+            self.clue_input.text = ""
+            self.slider.reset_to_center()
 
     def calculate_score(self, guess: float, target: float) -> int:
         difference = abs(guess - target)
@@ -215,8 +285,7 @@ class WavelengthGame:
         return 0
 
     def draw_scoring_zones(self, screen: pygame.Surface):
-        # Draw colored zones behind the slider
-        zone_widths = [0.05, 0.15, 0.25, 1.0]  # Percentage of total width for each zone
+        zone_widths = [0.05, 0.15, 0.25, 1.0]
         prev_width = 0
         
         for i, width in enumerate(zone_widths):
@@ -224,9 +293,8 @@ class WavelengthGame:
             left_pos = self.slider.rect.x + int(self.slider.rect.width * self.target_value) - zone_width // 2
             right_pos = left_pos + zone_width
             
-            # Create a surface with alpha for the zone
             zone_surface = pygame.Surface((zone_width, self.slider.rect.height + 40), pygame.SRCALPHA)
-            color = (*ZONE_COLORS[i], 128)  # Add alpha value
+            color = (*ZONE_COLORS[i], 128)
             pygame.draw.rect(zone_surface, color, (0, 0, zone_width, self.slider.rect.height + 40))
             
             screen.blit(zone_surface, (left_pos, self.slider.rect.y - 20))
@@ -238,14 +306,12 @@ class WavelengthGame:
         guess_pos = self.slider.rect.x + (self.guess_value * self.slider.rect.width)
         target_pos = self.slider.rect.x + (self.target_value * self.slider.rect.width)
         
-        # Draw arc connecting guess to target
         center_y = self.slider.rect.y + self.slider.rect.height // 2
         distance = abs(guess_pos - target_pos)
         mid_point = (guess_pos + target_pos) // 2
         
         if distance > 0:
-            # Draw curved arrow
-            control_point_y = center_y - 50  # Height of the curve
+            control_point_y = center_y - 50
             points = [
                 (guess_pos, center_y),
                 (mid_point, control_point_y),
@@ -253,7 +319,6 @@ class WavelengthGame:
             ]
             pygame.draw.lines(screen, WHITE, False, points, 2)
             
-            # Draw arrow head
             arrow_size = 10
             angle = math.atan2(center_y - control_point_y, target_pos - mid_point)
             pygame.draw.polygon(screen, WHITE, [
@@ -264,7 +329,6 @@ class WavelengthGame:
                  center_y - arrow_size * math.sin(angle + math.pi/6))
             ])
             
-            # Draw distance percentage
             distance_percent = abs(self.guess_value - self.target_value) * 100
             distance_text = FONT_SMALL.render(f"{distance_percent:.1f}% off", True, WHITE)
             screen.blit(distance_text, (mid_point - distance_text.get_width()//2, control_point_y - 20))
@@ -272,68 +336,73 @@ class WavelengthGame:
     def draw(self):
         self.screen.fill(BLACK)
 
-        # Draw spectrum words
-        left_word = FONT_LARGE.render(self.current_spectrum[0], True, WHITE)
-        right_word = FONT_LARGE.render(self.current_spectrum[1], True, WHITE)
-        self.screen.blit(left_word, (50, 50))
-        self.screen.blit(right_word, (WINDOW_WIDTH - right_word.get_width() - 50, 50))
+        if self.game_state == CATEGORY_SELECT:
+            title = FONT_LARGE.render("Select a Category", True, WHITE)
+            title_rect = title.get_rect(center=(WINDOW_WIDTH // 2, 100))
+            self.screen.blit(title, title_rect)
+            
+            for button in self.category_buttons:
+                button.draw(self.screen)
+        else:
+            left_word = FONT_LARGE.render(self.current_spectrum[0], True, WHITE)
+            right_word = FONT_LARGE.render(self.current_spectrum[1], True, WHITE)
+            self.screen.blit(left_word, (50, 50))
+            self.screen.blit(right_word, (WINDOW_WIDTH - right_word.get_width() - 50, 50))
 
-        # Draw current phase information
-        if self.game_state == PSYCHIC_TURN:
-            instruction = f"Player {self.current_player + 1}, enter your clue and set the target"
-            self.clue_input.draw(self.screen)
-            self.slider.draw(self.screen)
-            self.confirm_button.draw(self.screen)
-        elif self.game_state == GUESS_TURN:
-            instruction = f"Other players, make your guess! Clue: {self.current_clue}"
-            self.slider.draw(self.screen)
-            self.confirm_button.draw(self.screen)
-        elif self.game_state == REVEAL:
-            instruction = "Round Result"
-            
-            # Draw scoring zones first
-            self.draw_scoring_zones(self.screen)
-            
-            # Draw the slider
-            self.slider.draw(self.screen)
-            
-            # Animate the target reveal
-            if self.reveal_progress < REVEAL_ANIMATION_DURATION:
-                self.reveal_progress += 1
-                progress_ratio = self.reveal_progress / REVEAL_ANIMATION_DURATION
-                current_target = self.guess_value + (self.target_value - self.guess_value) * progress_ratio
-                target_pos = self.slider.rect.x + (current_target * self.slider.rect.width)
-            else:
-                target_pos = self.slider.rect.x + (self.target_value * self.slider.rect.width)
-                self.showing_distance = True
-            
-            # Draw target line
-            pygame.draw.line(self.screen, RED, 
-                           (target_pos, self.slider.rect.y - 20),
-                           (target_pos, self.slider.rect.y + self.slider.rect.height + 20), 3)
-            
-            # Draw distance indicator
-            self.draw_distance_indicator(self.screen)
-            
-            # Draw score popup
-            if self.score_popup:
-                self.score_popup.update()
-                self.score_popup.draw(self.screen)
-                if self.score_popup.alpha <= 0:
-                    self.score_popup = None
-            
-            score = self.calculate_score(self.guess_value, self.target_value)
-            score_text = FONT_LARGE.render(f"Score: {score}", True, WHITE)
-            self.screen.blit(score_text, (WINDOW_WIDTH // 2 - score_text.get_width() // 2, 450))
-            
-        elif self.game_state == GAME_END:
-            instruction = "Game Over!"
-            for i, score in enumerate(self.scores):
-                score_text = FONT_MEDIUM.render(f"Player {i + 1}: {score}", True, WHITE)
-                self.screen.blit(score_text, (WINDOW_WIDTH // 2 - score_text.get_width() // 2, 200 + i * 50))
+            category_text = FONT_SMALL.render(f"Category: {self.selected_category}", True, WHITE)
+            self.screen.blit(category_text, (WINDOW_WIDTH // 2 - category_text.get_width() // 2, 20))
 
-        instruction_surface = FONT_MEDIUM.render(instruction, True, WHITE)
-        self.screen.blit(instruction_surface, (WINDOW_WIDTH // 2 - instruction_surface.get_width() // 2, 150))
+            if self.game_state == PSYCHIC_TURN:
+                instruction = f"Player {self.current_player + 1}, enter your clue and set the target"
+                self.clue_input.draw(self.screen)
+                self.slider.draw(self.screen, color=GRAY, show_center=True)
+                self.new_spectrum_button.draw(self.screen)
+                self.confirm_button.draw(self.screen)
+            elif self.game_state == GUESS_TURN:
+                instruction = f"Other players, make your guess! Clue: {self.current_clue}"
+                self.slider.draw(self.screen, color=GRAY, show_center=False)
+                self.confirm_button.draw(self.screen)
+            elif self.game_state == REVEAL:
+                instruction = "Round Result"
+                
+                self.draw_scoring_zones(self.screen)
+                self.slider.draw(self.screen)
+                
+                if self.reveal_progress < REVEAL_ANIMATION_DURATION:
+                    self.reveal_progress += 1
+                    progress_ratio = self.reveal_progress / REVEAL_ANIMATION_DURATION
+                    current_target = self.guess_value + (self.target_value - self.guess_value) * progress_ratio
+                    target_pos = self.slider.rect.x + (current_target * self.slider.rect.width)
+                else:
+                    target_pos = self.slider.rect.x + (self.target_value * self.slider.rect.width)
+                    self.showing_distance = True
+                
+                pygame.draw.line(self.screen, RED, 
+                               (target_pos, self.slider.rect.y - 20),
+                               (target_pos, self.slider.rect.y + self.slider.rect.height + 20), 3)
+                
+                self.draw_distance_indicator(self.screen)
+                
+                if self.score_popup:
+                    self.score_popup.update()
+                    self.score_popup.draw(self.screen)
+                    if self.score_popup.alpha <= 0:
+                        self.score_popup = None
+                
+                score = self.calculate_score(self.guess_value, self.target_value)
+                score_text = FONT_LARGE.render(f"Score: {score}", True, WHITE)
+                self.screen.blit(score_text, (WINDOW_WIDTH // 2 - score_text.get_width() // 2, 450))
+                
+                self.confirm_button.draw(self.screen)
+                
+            elif self.game_state == GAME_END:
+                instruction = "Game Over!"
+                for i, score in enumerate(self.scores):
+                    score_text = FONT_MEDIUM.render(f"Player {i + 1}: {score}", True, WHITE)
+                    self.screen.blit(score_text, (WINDOW_WIDTH // 2 - score_text.get_width() // 2, 200 + i * 50))
+
+            instruction_surface = FONT_MEDIUM.render(instruction, True, WHITE)
+            self.screen.blit(instruction_surface, (WINDOW_WIDTH // 2 - instruction_surface.get_width() // 2, 150))
 
         pygame.display.flip()
 
@@ -342,14 +411,24 @@ class WavelengthGame:
             if event.type == pygame.QUIT:
                 return False
 
-            if self.game_state == PSYCHIC_TURN:
+            if self.game_state == CATEGORY_SELECT:
+                for button in self.category_buttons:
+                    if button.handle_event(event):
+                        self.select_category(button.category)
+                        break
+
+            elif self.game_state == PSYCHIC_TURN:
                 self.clue_input.handle_event(event)
                 self.slider.handle_event(event)
+                
+                if self.new_spectrum_button.handle_event(event):
+                    self.get_new_spectrum()
+                
                 if self.confirm_button.handle_event(event) and self.clue_input.text:
                     self.current_clue = self.clue_input.text
                     self.target_value = self.slider.value
                     self.game_state = GUESS_TURN
-                    self.slider.set_value(0.5)
+                    self.slider.reset_to_center()
 
             elif self.game_state == GUESS_TURN:
                 self.slider.handle_event(event)
@@ -374,12 +453,12 @@ class WavelengthGame:
                         self.game_state = PSYCHIC_TURN
                         self.current_spectrum = random.choice(self.spectrum_pairs)
                         self.clue_input.text = ""
-                        self.slider.set_value(0.5)
+                        self.slider.reset_to_center()
                         self.score_popup = None
                         self.showing_distance = False
 
         return True
-
+    
     def run(self):
         running = True
         while running:
@@ -388,6 +467,6 @@ class WavelengthGame:
             self.clock.tick(FPS)
 
 if __name__ == "__main__":
-    game = WavelengthGame(3)  # Start with 3 players
+    game = WavelengthGame(2)  # Start with 3 players
     game.run()
     pygame.quit()
