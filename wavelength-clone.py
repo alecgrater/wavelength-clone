@@ -24,10 +24,10 @@ SILVER = (192, 192, 192)
 BRONZE = (205, 127, 50)
 
 ZONE_COLORS = [
-    (46, 204, 113),
-    (52, 152, 219),
-    (241, 196, 15),
-    (231, 76, 60)
+    (0, 191, 255),   
+    (255, 140, 0),   
+    (255, 255, 0),    
+    (255, 0, 0)      
 ]
 
 REVEAL_ANIMATION_DURATION = 60
@@ -81,7 +81,7 @@ class Slider:
         self.center_height = 30
         self.center_color = WHITE
 
-    def draw(self, screen: pygame.Surface, color: Tuple[int, int, int] = GRAY, show_center: bool = False):
+    def draw(self, screen: pygame.Surface, color: Tuple[int, int, int] = GRAY, show_center: bool = True):  # Changed default to True
         # Draw the main slider bar
         pygame.draw.rect(screen, color, self.rect)
         
@@ -203,13 +203,30 @@ class WavelengthGame:
         self.slider = Slider(100, 300, WINDOW_WIDTH - 200, 20)
         self.clue_input = TextInput(WINDOW_WIDTH // 4, 200, WINDOW_WIDTH // 2, 40)
         
-        new_spectrum_width = 150
+        # Center both buttons vertically
         confirm_width = 100
-        total_width = new_spectrum_width + confirm_width + 20
-        start_x = WINDOW_WIDTH // 2 - total_width // 2
+        new_spectrum_width = 150
+        button_spacing = 20  # Space between buttons
         
-        self.new_spectrum_button = Button(start_x, 400, new_spectrum_width, 40, "New Spectrum", DARK_BLUE)
-        self.confirm_button = Button(start_x + new_spectrum_width + 20, 400, confirm_width, 40, "Confirm", DARK_BLUE)
+        # Position confirm button
+        self.confirm_button = Button(
+            WINDOW_WIDTH // 2 - confirm_width // 2,  # Center horizontally
+            400,  # Original y position
+            confirm_width,
+            40,
+            "Confirm",
+            DARK_BLUE
+        )
+        
+        # Position new spectrum button below confirm button
+        self.new_spectrum_button = Button(
+            WINDOW_WIDTH // 2 - new_spectrum_width // 2,  # Center horizontally
+            400 + 40 + button_spacing,  # Below confirm button
+            new_spectrum_width,
+            40,
+            "New Spectrum",
+            DARK_BLUE
+        )
 
         self.reveal_progress = 0
         self.score_popup = None
@@ -227,15 +244,14 @@ class WavelengthGame:
         self.categories["All"] = all_pairs
             
         self.category_buttons = []
-        button_width = 180  # Slightly smaller to fit more horizontally
+        button_width = 180
         button_height = 40
         button_spacing_x = 20
         button_spacing_y = 20
         
-        # Calculate layout
         buttons_per_row = 4
         num_categories = len(self.categories)
-        num_rows = (num_categories + buttons_per_row - 1) // buttons_per_row  # Ceiling division
+        num_rows = (num_categories + buttons_per_row - 1) // buttons_per_row
         
         total_width = (button_width * buttons_per_row) + (button_spacing_x * (buttons_per_row - 1))
         total_height = (button_height * num_rows) + (button_spacing_y * (num_rows - 1))
@@ -243,7 +259,6 @@ class WavelengthGame:
         start_x = (WINDOW_WIDTH - total_width) // 2
         start_y = (WINDOW_HEIGHT - total_height) // 2
         
-        # Create buttons in grid layout
         for i, category in enumerate(self.categories.keys()):
             row = i // buttons_per_row
             col = i % buttons_per_row
@@ -286,15 +301,13 @@ class WavelengthGame:
 
     def draw_scoring_zones(self, screen: pygame.Surface):
         zone_widths = [0.05, 0.15, 0.25, 1.0]
-        prev_width = 0
         
         for i, width in enumerate(zone_widths):
             zone_width = int(self.slider.rect.width * width)
             left_pos = self.slider.rect.x + int(self.slider.rect.width * self.target_value) - zone_width // 2
-            right_pos = left_pos + zone_width
             
             zone_surface = pygame.Surface((zone_width, self.slider.rect.height + 40), pygame.SRCALPHA)
-            color = (*ZONE_COLORS[i], 128)
+            color = (*ZONE_COLORS[i], 128)  # Add alpha value
             pygame.draw.rect(zone_surface, color, (0, 0, zone_width, self.slider.rect.height + 40))
             
             screen.blit(zone_surface, (left_pos, self.slider.rect.y - 20))
@@ -355,15 +368,20 @@ class WavelengthGame:
             if self.game_state == PSYCHIC_TURN:
                 instruction = f"Player {self.current_player + 1}, enter your clue and set the target"
                 self.clue_input.draw(self.screen)
-                self.slider.draw(self.screen, color=GRAY, show_center=True)
+                self.slider.draw(self.screen)
                 self.new_spectrum_button.draw(self.screen)
                 self.confirm_button.draw(self.screen)
             elif self.game_state == GUESS_TURN:
                 instruction = f"Other players, make your guess! Clue: {self.current_clue}"
-                self.slider.draw(self.screen, color=GRAY, show_center=False)
+                self.slider.draw(self.screen)
                 self.confirm_button.draw(self.screen)
             elif self.game_state == REVEAL:
                 instruction = "Round Result"
+                
+                # Display clue centered above wavelength line
+                clue_text = FONT_MEDIUM.render(f"Clue: {self.current_clue}", True, GOLD)
+                clue_rect = clue_text.get_rect(center=(WINDOW_WIDTH // 2, self.slider.rect.y - 110))
+                self.screen.blit(clue_text, clue_rect)
                 
                 self.draw_scoring_zones(self.screen)
                 self.slider.draw(self.screen)
@@ -467,6 +485,6 @@ class WavelengthGame:
             self.clock.tick(FPS)
 
 if __name__ == "__main__":
-    game = WavelengthGame(2)  # Start with 3 players
+    game = WavelengthGame(2)  # Start with 2 players
     game.run()
     pygame.quit()
